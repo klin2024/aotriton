@@ -229,6 +229,18 @@ TritonKernel::load_for_device(int device_id,
                               std::string_view kernel_function_name,
                               std::string_view stem_name,
                               pstring_view package_path) {
+
+
+  std::cerr << "=== Kernel Loading Info ===" << std::endl;
+#if defined(_WIN32)
+  std::wcerr << L"> Package Path: " << package_path << std::endl;
+#else
+  std::cerr << "Package Path: " << package_path << std::endl;
+#endif
+  std::cerr << "> Stem Name (File ID): " << stem_name << std::endl;
+  std::cerr << "> Kernel Function Name: " << kernel_function_name << std::endl;
+
+
   hipJitOption opt[] = { hipJitOptionErrorLogBufferSizeBytes,
                          hipJitOptionErrorLogBuffer,
                          hipJitOptionInfoLogBufferSizeBytes,

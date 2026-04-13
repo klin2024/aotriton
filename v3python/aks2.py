@@ -14,7 +14,7 @@ AOTriton Kernel Storage V2 (AKS2) utility
 """
 
 def parse():
-    parser = ArgumentParser(description=desc)
+    parser = ArgumentParser(description=desc, fromfile_prefix_chars='@')
     parser.add_argument("-o", help="Output AKS2 file")
     parser.add_argument("--ignore_json", help="Ignore JSON files", action='store_true')
     parser.add_argument("hsaco_files", nargs='*', help="Input HSACO Files")

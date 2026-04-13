@@ -383,7 +383,8 @@ class TuningDatabase(object):
     def _create_table(self, tune_info):
         columns = self.collect_columns(tune_info['inputs'], prefix='inputs$')
         # UNIQUE = 'UNIQUE'
-        col_def = ['id INTEGER PRIMARY KEY', f'gpu TEXT']
+        # col_def = ['id INTEGER PRIMARY KEY', f'gpu TEXT']
+        col_def = [f'gpu TEXT']
         col_def += [f'{colname} {self.sqltype(pytype)}' for colname, _, pytype in columns]
         unique = ', '.join(['gpu'] + [colname for colname, _, _ in columns])
         columns = self.collect_columns(tune_info['tuned_kernel'], prefix='tuned_kernel$')

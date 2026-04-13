@@ -11,7 +11,6 @@ set(AOTRITON_V2_BUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}")
 set(AOTRITON_KERNEL_STORAGE_V2_DIR "${AOTRITON_V2_BUILD_DIR}/aotriton.images")
 execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory "${AOTRITON_V2_BUILD_DIR}")
 execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory "${AOTRITON_KERNEL_STORAGE_V2_DIR}")
-
 execute_process(COMMAND ${CMAKE_COMMAND}
   -E env VIRTUAL_ENV=${VENV_DIR}
   "${VENV_BIN_PYTHON}" -m v3python.gpu_targets
@@ -41,6 +40,104 @@ execute_process(
     --decomposed "${AOTRITON_V2_BUILD_DIR}/database"
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_PARENT_DIR}"
     COMMAND_ERROR_IS_FATAL ANY)
+
+
+# # ---------------------------------------------------------------
+# message(STATUS "MILES_DEBUG ENV check: $ENV{MILES_DEBUG}")
+# if(DEFINED ENV{MILES_DEBUG})
+#     set(SRC_DB "${CMAKE_SOURCE_DIR}/v2python/rules/tuning_database-q.sqlite3")
+#     set(TGT_DB "${AOTRITON_V2_BUILD_DIR}/database/tuning_database.sqlite3")
+#     message(STATUS "MILES_DEBUG upsert: ${SRC_DB} -> ${TGT_DB}")
+#     execute_process(
+#         COMMAND sqlite3 "${TGT_DB}"
+#                 "ATTACH DATABASE '${SRC_DB}' AS srcdb; BEGIN; INSERT OR REPLACE INTO 'FLASH$attn_fwd' SELECT 'gfx1100_mod0', [inputs$Q_dtype], [inputs$Max_seqlen_q], [inputs$Max_seqlen_k], [inputs$CAUSAL_TYPE], [inputs$BLOCK_DMODEL], [inputs$ENABLE_DROPOUT], [inputs$PADDED_HEAD], [inputs$BIAS_TYPE], [inputs$USE_ALIBI], [inputs$INT8], [inputs$INT8_KV], [inputs$USE_P_SCALE], [tuned_kernel$PERSISTENT_TYPE], [tuned_kernel$GRID_CU_MULTIP], [tuned_kernel$BLOCK_M], [tuned_kernel$BLOCK_N], [tuned_kernel$PRE_LOAD_V], [compiler_options$waves_per_eu], [compiler_options$num_warps], [compiler_options$num_stages] FROM srcdb.'FLASH$attn_fwd'; COMMIT; DETACH DATABASE srcdb;"
+#         RESULT_VARIABLE _sqlite_rc
+#         OUTPUT_VARIABLE _sqlite_out
+#         ERROR_VARIABLE _sqlite_err
+#     )
+#     message(STATUS "sqlite3 -q rc=${_sqlite_rc} err=${_sqlite_err}")
+#     if(NOT _sqlite_rc EQUAL 0)
+#         message(FATAL_ERROR "sqlite3 upsert of FLASH$attn_fwd failed (rc=${_sqlite_rc}): ${_sqlite_err}")
+#     endif()
+
+#     set(SRC_DB "${CMAKE_SOURCE_DIR}/v2python/rules/tuning_database-k.sqlite3")
+#     execute_process(
+#         COMMAND sqlite3 "${TGT_DB}"
+#                 "ATTACH DATABASE '${SRC_DB}' AS srcdb; BEGIN; INSERT OR REPLACE INTO 'FLASH$attn_fwd' SELECT 'gfx1100_mod0', [inputs$Q_dtype], [inputs$Max_seqlen_q], [inputs$Max_seqlen_k], [inputs$CAUSAL_TYPE], [inputs$BLOCK_DMODEL], [inputs$ENABLE_DROPOUT], [inputs$PADDED_HEAD], [inputs$BIAS_TYPE], [inputs$USE_ALIBI], [inputs$INT8], [inputs$INT8_KV], [inputs$USE_P_SCALE], [tuned_kernel$PERSISTENT_TYPE], [tuned_kernel$GRID_CU_MULTIP], [tuned_kernel$BLOCK_M], [tuned_kernel$BLOCK_N], [tuned_kernel$PRE_LOAD_V], [compiler_options$waves_per_eu], [compiler_options$num_warps], [compiler_options$num_stages] FROM srcdb.'FLASH$attn_fwd'; COMMIT; DETACH DATABASE srcdb;"
+#         RESULT_VARIABLE _sqlite_rc
+#         ERROR_VARIABLE _sqlite_err
+#     )
+#     message(STATUS "sqlite3 -k rc=${_sqlite_rc} err=${_sqlite_err}")
+#     if(NOT _sqlite_rc EQUAL 0)
+#         message(FATAL_ERROR "sqlite3 upsert of FLASH$attn_fwd failed (rc=${_sqlite_rc}): ${_sqlite_err}")
+#     endif()
+
+#     set(SRC_DB "${CMAKE_SOURCE_DIR}/v2python/rules/tuning_database-qq.sqlite3")
+#     execute_process(
+#         COMMAND sqlite3 "${TGT_DB}"
+#                 "ATTACH DATABASE '${SRC_DB}' AS srcdb; BEGIN; INSERT OR REPLACE INTO 'FLASH$attn_fwd' SELECT 'gfx1100_mod0', [inputs$Q_dtype], [inputs$Max_seqlen_q], [inputs$Max_seqlen_k], [inputs$CAUSAL_TYPE], [inputs$BLOCK_DMODEL], [inputs$ENABLE_DROPOUT], [inputs$PADDED_HEAD], [inputs$BIAS_TYPE], [inputs$USE_ALIBI], [inputs$INT8], [inputs$INT8_KV], [inputs$USE_P_SCALE], [tuned_kernel$PERSISTENT_TYPE], [tuned_kernel$GRID_CU_MULTIP], [tuned_kernel$BLOCK_M], [tuned_kernel$BLOCK_N], [tuned_kernel$PRE_LOAD_V], [compiler_options$waves_per_eu], [compiler_options$num_warps], [compiler_options$num_stages] FROM srcdb.'FLASH$attn_fwd'; COMMIT; DETACH DATABASE srcdb;"
+#         RESULT_VARIABLE _sqlite_rc
+#         ERROR_VARIABLE _sqlite_err
+#     )
+#     message(STATUS "sqlite3 -qq rc=${_sqlite_rc} err=${_sqlite_err}")
+#     if(NOT _sqlite_rc EQUAL 0)
+#         message(FATAL_ERROR "sqlite3 upsert of FLASH$attn_fwd failed (rc=${_sqlite_rc}): ${_sqlite_err}")
+#     endif()
+#     # Force WAL checkpoint to ensure all upserted data is visible to the next reader
+#     execute_process(
+#         COMMAND sqlite3 "${TGT_DB}" "PRAGMA wal_checkpoint(TRUNCATE);"
+#         RESULT_VARIABLE _sqlite_rc
+#         ERROR_VARIABLE _sqlite_err
+#     )
+#     message(STATUS "sqlite3 wal_checkpoint rc=${_sqlite_rc} err=${_sqlite_err}")
+# endif()
+
+
+
+
+# if(DEFINED ENV{MILES_DEBUG})
+#     set(SRC_DB "${CMAKE_SOURCE_DIR}/v2python/rules/tuning_database.sqlite3")
+#     set(TGT_DB "${AOTRITON_V2_BUILD_DIR}/database/tuning_database.sqlite3")
+#     message(STATUS "MILES_DEBUG upsert: ${SRC_DB} -> ${TGT_DB}")
+
+#     execute_process(
+#         COMMAND sqlite3 "${TGT_DB}"
+#                 "ATTACH DATABASE '${SRC_DB}' AS srcdb; BEGIN; INSERT OR REPLACE INTO 'FLASH$attn_fwd' SELECT 'gfx1100_mod0', [inputs$Q_dtype], [inputs$Max_seqlen_q], [inputs$Max_seqlen_k], [inputs$CAUSAL_TYPE], [inputs$BLOCK_DMODEL], [inputs$ENABLE_DROPOUT], [inputs$PADDED_HEAD], [inputs$BIAS_TYPE], [inputs$USE_ALIBI], [inputs$INT8], [inputs$INT8_KV], [inputs$USE_P_SCALE], [tuned_kernel$PERSISTENT_TYPE], [tuned_kernel$GRID_CU_MULTIP], [tuned_kernel$BLOCK_M], [tuned_kernel$BLOCK_N], [tuned_kernel$PRE_LOAD_V], [compiler_options$waves_per_eu], [compiler_options$num_warps], [compiler_options$num_stages] FROM srcdb.'FLASH$attn_fwd'; COMMIT; DETACH DATABASE srcdb;"
+#         RESULT_VARIABLE _sqlite_rc
+#         ERROR_VARIABLE _sqlite_err
+#     )
+#     message(STATUS "sqlite3 -qq rc=${_sqlite_rc} err=${_sqlite_err}")
+#     if(NOT _sqlite_rc EQUAL 0)
+#         message(FATAL_ERROR "sqlite3 upsert of FLASH$attn_fwd failed (rc=${_sqlite_rc}): ${_sqlite_err}")
+#     endif()
+
+#     # Force WAL checkpoint to ensure all upserted data is visible to the next reader
+#     execute_process(
+#         COMMAND sqlite3 "${TGT_DB}" "PRAGMA wal_checkpoint(TRUNCATE);"
+#         RESULT_VARIABLE _sqlite_rc
+#         ERROR_VARIABLE _sqlite_err
+#     )
+#     message(STATUS "sqlite3 wal_checkpoint rc=${_sqlite_rc} err=${_sqlite_err}")
+#     # exit(-1)
+# endif()
+# ---------------------------------------------------------------
+
+# Apply GPU-specific fine-tuned kernel parameters (INSERT OR REPLACE)
+# on top of the composed database, if database-finetune/ directory exists.
+# Directory layout: database-finetune/amd/<arch>/<family>/<kernel>.sqlite3
+set(FINETUNE_DIR "${CMAKE_SOURCE_DIR}/database-finetune")
+if(EXISTS "${FINETUNE_DIR}")
+    message(STATUS "Applying fine-tuned database from ${FINETUNE_DIR}...")
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E env VIRTUAL_ENV=${VENV_DIR}
+        "${VENV_BIN_PYTHON}" -m v3python.database_finetune
+        --database_file "${AOTRITON_V2_BUILD_DIR}/database/tuning_database.sqlite3"
+        --finetune_dir "${FINETUNE_DIR}"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_PARENT_DIR}"
+        COMMAND_ERROR_IS_FATAL ANY)
+else()
+    message(STATUS "No database-finetune/ found, skipping finetune step.")
+endif()
 
 get_filename_component(AOTRITON_COMPILER "${CMAKE_CURRENT_LIST_DIR}/../v3python/compile.py" ABSOLUTE)
 message("AOTRITON_COMPILER ${AOTRITON_COMPILER}")
@@ -97,6 +194,7 @@ COMMAND_ECHO STDOUT
 WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_PARENT_DIR}"
 COMMAND_ERROR_IS_FATAL ANY
 )
+
 
 # Compile HSACO Kernels
 if(NOT AOTRITON_NOIMAGE_MODE)
@@ -179,6 +277,11 @@ if(NOT AOTRITON_NOIMAGE_MODE)
         ${DIR_KERNEL}
         "${FONLY}.aks2")
       # message(STATUS "Add AKS2 ${AKS2}")
+      # Write hsaco list to a response file to avoid Windows 8191-char cmd line limit.
+      # aks2.py uses argparse fromfile_prefix_chars='@' to expand @<rsp>.
+      set(AKS2_RSP "${AKS2}.rsp")
+      string(REPLACE ";" "\n" AKS2_RSP_CONTENT "${RULE}")
+      file(WRITE "${AKS2_RSP}" "${AKS2_RSP_CONTENT}")
       add_custom_command(OUTPUT "${AKS2}"
         COMMAND ${CMAKE_COMMAND} -E env VIRTUAL_ENV=${VENV_DIR}
         "${VENV_BIN_PYTHON}"
@@ -186,7 +289,7 @@ if(NOT AOTRITON_NOIMAGE_MODE)
         -o "${AKS2}"
         ${AKS2_OPTIONS}
         --
-        ${RULE}
+        "@${AKS2_RSP}"
         DEPENDS aotriton_v2_compile
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_PARENT_DIR}"
         COMMAND_EXPAND_LISTS)

@@ -11,6 +11,7 @@ os.environ['HSA_DISABLE_FRAGMENT_ALLOCATOR'] = '1'
 import pytest
 import json
 import sys
+import torch
 import subprocess
 from threading import Thread
 import multiprocessing
@@ -37,29 +38,30 @@ from mptune.core import (
 )
 
 def get_total_memory_from_amdsmi():
-    from amdsmi import (
-        amdsmi_init,
-        amdsmi_get_processor_handles,
-        amdsmi_get_gpu_vram_usage,
-        AmdSmiException,
-        amdsmi_shut_down,
-    )
-    amdsmi_init()
-    vram_cap = -1
-    try:
-        devices = amdsmi_get_processor_handles()
-        for device in devices:
-            vram_usage = amdsmi_get_gpu_vram_usage(device)
-            total_memory = vram_usage['vram_total'] / (1024 ** 1)  # MB -> GB
-            vram_cap = min(vram_cap, total_memory) if vram_cap > 0 else total_memory
-    except AmdSmiException as e:
-        print(e)
-    finally:
-        try:
-            amdsmi_shut_down()
-        except AmdSmiException as e:
-            print(e)
-    return vram_cap
+    return 96
+    # from amdsmi import (
+    #     amdsmi_init,
+    #     amdsmi_get_processor_handles,
+    #     amdsmi_get_gpu_vram_usage,
+    #     AmdSmiException,
+    #     amdsmi_shut_down,
+    # )
+    # amdsmi_init()
+    # vram_cap = -1
+    # try:
+    #     devices = amdsmi_get_processor_handles()
+    #     for device in devices:
+    #         vram_usage = amdsmi_get_gpu_vram_usage(device)
+    #         total_memory = vram_usage['vram_total'] / (1024 ** 1)  # MB -> GB
+    #         vram_cap = min(vram_cap, total_memory) if vram_cap > 0 else total_memory
+    # except AmdSmiException as e:
+    #     print(e)
+    # finally:
+    #     try:
+    #         amdsmi_shut_down()
+    #     except AmdSmiException as e:
+    #         print(e)
+    # return vram_cap
 
 VRAM_CAP_IN_GB = get_total_memory_from_amdsmi()
 
