@@ -33,6 +33,9 @@ class attn_fwd(FlashKernel):
     # Note: There is no other FWD metro kernel right now so the arguments are shared
     ARGUMENTS = OpAttnFwd.ARGUMENTS
 
+    LUT_FULL_SEQLEN_Q = [16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384]
+    LUT_FULL_SEQLEN_K = [16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384]
+
     PERF_CHOICES = {
         frozenset(['PERSISTENT_TYPE']) : _IF_CAUSAL(TC.constexpr.int8_t(2)),
         frozenset(['GRID_CU_MULTIP']) : np.array([2], dtype=np.int8),  # NOTE: use np.array with dtype to reduce size of the generate tuning infomation struct
@@ -84,7 +87,9 @@ class attn_fwd(FlashKernel):
         if CDNA:
             BLOCK_SIZES = [(32, 16), (128, 64), (64, 64), (64, 32), (128, 128)]
         elif RDNA:
-            BLOCK_SIZES = [(64, 32), (32, 32), (32, 16)]
+            # BLOCK_SIZES = [(64, 32), (32, 32), (32, 16)]
+            BLOCK_SIZES = [(64, 32), (32, 32), (32, 16),
+                           (128, 64), (64, 64), (16, 16)]
             if '*fp32' not in dtype:
                 BLOCK_SIZES += [(16, 16)]
             else:
@@ -115,10 +120,10 @@ class attn_fwd(FlashKernel):
                 continue  # No optimal kernel according to 0.8b tuning db
             if CDNA and M > 64 and N > 64 and warps == 1:
                 continue  # No optimal kernel according to 0.8b tuning db
-            if RDNA and M > 32 and N > 32 and stages == 2:
-                continue  # No optimal kernel according to 0.8b tuning db
-            if RDNA and M > 32 and N > 32 and warps == 1:
-                continue  # No optimal kernel according to 0.8b tuning db
+            # if RDNA and M > 32 and N > 32 and stages == 2:
+            #     continue  # No optimal kernel according to 0.8b tuning db
+            # if RDNA and M > 32 and N > 32 and warps == 1:
+            #     continue  # No optimal kernel according to 0.8b tuning db
             persistent_type = 2 if CAUSAL_TYPE != 0 else 0
             kw = { 'PERSISTENT_TYPE' : persistent_type,
                    'GRID_CU_MULTIP': 2,

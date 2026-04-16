@@ -11,6 +11,7 @@ os.environ['HSA_DISABLE_FRAGMENT_ALLOCATOR'] = '1'
 import pytest
 import json
 import sys
+import torch
 import subprocess
 from threading import Thread
 import multiprocessing
@@ -37,29 +38,30 @@ from mptune.core import (
 )
 
 def get_total_memory_from_amdsmi():
-    from amdsmi import (
-        amdsmi_init,
-        amdsmi_get_processor_handles,
-        amdsmi_get_gpu_vram_usage,
-        AmdSmiException,
-        amdsmi_shut_down,
-    )
-    amdsmi_init()
-    vram_cap = -1
-    try:
-        devices = amdsmi_get_processor_handles()
-        for device in devices:
-            vram_usage = amdsmi_get_gpu_vram_usage(device)
-            total_memory = vram_usage['vram_total'] / (1024 ** 1)  # MB -> GB
-            vram_cap = min(vram_cap, total_memory) if vram_cap > 0 else total_memory
-    except AmdSmiException as e:
-        print(e)
-    finally:
-        try:
-            amdsmi_shut_down()
-        except AmdSmiException as e:
-            print(e)
-    return vram_cap
+    return 96
+    # from amdsmi import (
+    #     amdsmi_init,
+    #     amdsmi_get_processor_handles,
+    #     amdsmi_get_gpu_vram_usage,
+    #     AmdSmiException,
+    #     amdsmi_shut_down,
+    # )
+    # amdsmi_init()
+    # vram_cap = -1
+    # try:
+    #     devices = amdsmi_get_processor_handles()
+    #     for device in devices:
+    #         vram_usage = amdsmi_get_gpu_vram_usage(device)
+    #         total_memory = vram_usage['vram_total'] / (1024 ** 1)  # MB -> GB
+    #         vram_cap = min(vram_cap, total_memory) if vram_cap > 0 else total_memory
+    # except AmdSmiException as e:
+    #     print(e)
+    # finally:
+    #     try:
+    #         amdsmi_shut_down()
+    #     except AmdSmiException as e:
+    #         print(e)
+    # return vram_cap
 
 VRAM_CAP_IN_GB = get_total_memory_from_amdsmi()
 
@@ -356,10 +358,10 @@ def parse():
     p.add_argument('--d_head', type=int, nargs=NARG_PLUS, default=[16, 32, 48, 64, 80, 96, 128, 160, 192, 224, 256, 512], help='Head dimensions.')
     # p.add_argument('--seqlen_q', type=int, nargs='+', default=[4,8,16,32,64,128,256,1024,2048,4096,8192], help='Sequence length of Q.')
     # p.add_argument('--seqlen_k', type=int, nargs='+', default=[4,8,16,32,64,128,256,1024,2048,4096,8192], help='Sequence length of K/V.')
-    p.add_argument('--seqlen_q', type=int, nargs=NARG_PLUS, default=[16,32,64,128,256,512,1024,2048,4096,8192], help='Sequence length of Q.')
-    p.add_argument('--seqlen_k', type=int, nargs=NARG_PLUS, default=[16,32,64,128,256,512,1024,2048,4096,8192], help='Sequence length of K/V.')
-    p.add_argument('--max_seqlen_q', type=int, default=8192, help='A neat way to limit max value of --seqlen_q.')
-    p.add_argument('--max_seqlen_k', type=int, default=8192, help='A neat way to limit max value of --seqlen_k.')
+    p.add_argument('--seqlen_q', type=int, nargs=NARG_PLUS, default=[16,32,64,128,256,512,1024,2048,4096,8192, 8192*2], help='Sequence length of Q.')
+    p.add_argument('--seqlen_k', type=int, nargs=NARG_PLUS, default=[16,32,64,128,256,512,1024,2048,4096,8192, 8192*2], help='Sequence length of K/V.')
+    p.add_argument('--max_seqlen_q', type=int, default=81920, help='A neat way to limit max value of --seqlen_q.')
+    p.add_argument('--max_seqlen_k', type=int, default=81920, help='A neat way to limit max value of --seqlen_k.')
     p.add_argument('--min_seqlen_q', type=int, default=None, help='A neat way to limit min value of --seqlen_q.')
     p.add_argument('--min_seqlen_k', type=int, default=None, help='A neat way to limit min value of --seqlen_k.')
     p.add_argument('--complement_seqlens', action='store_true', help='Select NOT (seqlen_q <= max_seqlen_q and seqlen_k <= max_seqlen_k)')

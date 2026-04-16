@@ -62,7 +62,7 @@ def main():
             yield k, hashfile(args.build_dir / v)
     db['secondary'] = dict(gen_secondary_db_hash())
     sig['DB_SHA256'] = db
-    sig['TRITON_VERSION'] = str(importlib.metadata.version("triton"))
+    sig['TRITON_VERSION'] = str(importlib.metadata.version("triton-windows"))
     with open(args.output_file, 'w') as f:
         json.dump(sig, f, indent=2)
         print('', file=f)

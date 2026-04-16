@@ -86,8 +86,8 @@ class Flash(TuningDescription):
         a = Namespace()
         a.dtype = ['float16', 'bfloat16', 'float32']
         a.hdim = [16, 32, 48, 64, 80, 96, 128, 160, 192, 224, 256, 512]
-        a.seqlen_q = [16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192]
-        a.seqlen_k = [16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192]
+        a.seqlen_q = [16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384]
+        a.seqlen_k = [16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384]
         a.causal = [False, True]
         a.dropout_p = [0.0, 0.5]
         a.bias_type = [0, 1]
@@ -101,6 +101,9 @@ class Flash(TuningDescription):
             yield FlashEntry(*tup)
 
     def list_kernels(self, entry: FlashEntry):
+        if entry.seqlen_q in [16384] or entry.seqlen_k in [16384]:
+            return ['attn_fwd']
+
         if entry.hdim > 224:
             return ['attn_fwd', 'bwd_kernel_dk_dv', 'bwd_kernel_dq']
         return ['attn_fwd', 'bwd_kernel_dk_dv', 'bwd_kernel_dq', 'bwd_kernel_fuse']

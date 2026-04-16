@@ -212,7 +212,7 @@ else()
   else()
     add_custom_command(OUTPUT "${AOTRITON_TRITON_SO}"
       COMMAND ${CMAKE_COMMAND} -E env TRITON_BUILD_PROTON=OFF VIRTUAL_ENV=${VENV_DIR} TRITON_BUILD_DIR=${TRITON_BUILD_DIR} "${VENV_BIN_PYTHON}" -m pip install .
-      WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/third_party/triton/"
+      WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/third_party/triton-windows/"
     )
   endif()
   LIST(APPEND ALL_TRITON_SOS "${AOTRITON_TRITON_SO}")

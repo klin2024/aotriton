@@ -11,7 +11,6 @@ set(AOTRITON_V2_BUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}")
 set(AOTRITON_KERNEL_STORAGE_V2_DIR "${AOTRITON_V2_BUILD_DIR}/aotriton.images")
 execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory "${AOTRITON_V2_BUILD_DIR}")
 execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory "${AOTRITON_KERNEL_STORAGE_V2_DIR}")
-
 execute_process(COMMAND ${CMAKE_COMMAND}
   -E env VIRTUAL_ENV=${VENV_DIR}
   "${VENV_BIN_PYTHON}" -m v3python.gpu_targets
@@ -24,7 +23,11 @@ message(STATUS "AOTRITON_TARGET_ARCH ${AOTRITON_TARGET_ARCH}")
 message(STATUS "AOTRITON_OVERRIDE_TARGET_GPUS ${AOTRITON_OVERRIDE_TARGET_GPUS}")
 message(STATUS "EFFECTIVE_TARGET_GPUS ${EFFECTIVE_TARGET_GPUS}")
 
+# python -X utf8 -m v3python.gpu_targets --target_arch gfx1151_mod0 --target_gpus ""
+# exit()
+
 set(DBXZ_BASE "${CMAKE_SOURCE_DIR}/v3python")
+
 file(GLOB_RECURSE DB_TARS CONFIGURE_DEPENDS "${DBXZ_BASE}/database/*.sqlite3.tar.xz")
 foreach(DBXZ IN LISTS DB_TARS)
   cmake_path(RELATIVE_PATH DBXZ BASE_DIRECTORY "${DBXZ_BASE}" OUTPUT_VARIABLE REL_DBXZ)
@@ -32,6 +35,7 @@ foreach(DBXZ IN LISTS DB_TARS)
   file(ARCHIVE_EXTRACT INPUT "${DBXZ}" DESTINATION "${AOTRITON_V2_BUILD_DIR}/${REL_DBXZ}")
   message(STATUS "Extracting ${DBXZ} to ${AOTRITON_V2_BUILD_DIR}/${REL_DBXZ}")
 endforeach(DBXZ)
+
 
 message(STATUS "Assembling Central Database...")
 execute_process(
@@ -41,6 +45,58 @@ execute_process(
     --decomposed "${AOTRITON_V2_BUILD_DIR}/database"
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_PARENT_DIR}"
     COMMAND_ERROR_IS_FATAL ANY)
+# exit()
+
+# ---------------------------------------------------------------
+message(STATUS "MILES_DEBUG ENV check: $ENV{MILES_DEBUG}")
+if(DEFINED ENV{MILES_DEBUG})
+    set(SRC_DB "${CMAKE_SOURCE_DIR}/v2python/rules/tuning_database-q.sqlite3")
+    set(TGT_DB "${AOTRITON_V2_BUILD_DIR}/database/tuning_database.sqlite3")
+    message(STATUS "MILES_DEBUG upsert: ${SRC_DB} -> ${TGT_DB}")
+    execute_process(
+        COMMAND sqlite3 "${TGT_DB}"
+                "ATTACH DATABASE '${SRC_DB}' AS srcdb; BEGIN; INSERT OR REPLACE INTO 'FLASH$attn_fwd' SELECT 'gfx1100_mod0', [inputs$Q_dtype], [inputs$Max_seqlen_q], [inputs$Max_seqlen_k], [inputs$CAUSAL_TYPE], [inputs$BLOCK_DMODEL], [inputs$ENABLE_DROPOUT], [inputs$PADDED_HEAD], [inputs$BIAS_TYPE], [inputs$USE_ALIBI], [inputs$INT8], [inputs$INT8_KV], [inputs$USE_P_SCALE], [tuned_kernel$PERSISTENT_TYPE], [tuned_kernel$GRID_CU_MULTIP], [tuned_kernel$BLOCK_M], [tuned_kernel$BLOCK_N], [tuned_kernel$PRE_LOAD_V], [compiler_options$waves_per_eu], [compiler_options$num_warps], [compiler_options$num_stages] FROM srcdb.'FLASH$attn_fwd'; COMMIT; DETACH DATABASE srcdb;"
+        RESULT_VARIABLE _sqlite_rc
+        OUTPUT_VARIABLE _sqlite_out
+        ERROR_VARIABLE _sqlite_err
+    )
+    message(STATUS "sqlite3 -q rc=${_sqlite_rc} err=${_sqlite_err}")
+    if(NOT _sqlite_rc EQUAL 0)
+        message(FATAL_ERROR "sqlite3 upsert of FLASH$attn_fwd failed (rc=${_sqlite_rc}): ${_sqlite_err}")
+    endif()
+
+    set(SRC_DB "${CMAKE_SOURCE_DIR}/v2python/rules/tuning_database-k.sqlite3")
+    execute_process(
+        COMMAND sqlite3 "${TGT_DB}"
+                "ATTACH DATABASE '${SRC_DB}' AS srcdb; BEGIN; INSERT OR REPLACE INTO 'FLASH$attn_fwd' SELECT 'gfx1100_mod0', [inputs$Q_dtype], [inputs$Max_seqlen_q], [inputs$Max_seqlen_k], [inputs$CAUSAL_TYPE], [inputs$BLOCK_DMODEL], [inputs$ENABLE_DROPOUT], [inputs$PADDED_HEAD], [inputs$BIAS_TYPE], [inputs$USE_ALIBI], [inputs$INT8], [inputs$INT8_KV], [inputs$USE_P_SCALE], [tuned_kernel$PERSISTENT_TYPE], [tuned_kernel$GRID_CU_MULTIP], [tuned_kernel$BLOCK_M], [tuned_kernel$BLOCK_N], [tuned_kernel$PRE_LOAD_V], [compiler_options$waves_per_eu], [compiler_options$num_warps], [compiler_options$num_stages] FROM srcdb.'FLASH$attn_fwd'; COMMIT; DETACH DATABASE srcdb;"
+        RESULT_VARIABLE _sqlite_rc
+        ERROR_VARIABLE _sqlite_err
+    )
+    message(STATUS "sqlite3 -k rc=${_sqlite_rc} err=${_sqlite_err}")
+    if(NOT _sqlite_rc EQUAL 0)
+        message(FATAL_ERROR "sqlite3 upsert of FLASH$attn_fwd failed (rc=${_sqlite_rc}): ${_sqlite_err}")
+    endif()
+
+    set(SRC_DB "${CMAKE_SOURCE_DIR}/v2python/rules/tuning_database-qq.sqlite3")
+    execute_process(
+        COMMAND sqlite3 "${TGT_DB}"
+                "ATTACH DATABASE '${SRC_DB}' AS srcdb; BEGIN; INSERT OR REPLACE INTO 'FLASH$attn_fwd' SELECT 'gfx1100_mod0', [inputs$Q_dtype], [inputs$Max_seqlen_q], [inputs$Max_seqlen_k], [inputs$CAUSAL_TYPE], [inputs$BLOCK_DMODEL], [inputs$ENABLE_DROPOUT], [inputs$PADDED_HEAD], [inputs$BIAS_TYPE], [inputs$USE_ALIBI], [inputs$INT8], [inputs$INT8_KV], [inputs$USE_P_SCALE], [tuned_kernel$PERSISTENT_TYPE], [tuned_kernel$GRID_CU_MULTIP], [tuned_kernel$BLOCK_M], [tuned_kernel$BLOCK_N], [tuned_kernel$PRE_LOAD_V], [compiler_options$waves_per_eu], [compiler_options$num_warps], [compiler_options$num_stages] FROM srcdb.'FLASH$attn_fwd'; COMMIT; DETACH DATABASE srcdb;"
+        RESULT_VARIABLE _sqlite_rc
+        ERROR_VARIABLE _sqlite_err
+    )
+    message(STATUS "sqlite3 -qq rc=${_sqlite_rc} err=${_sqlite_err}")
+    if(NOT _sqlite_rc EQUAL 0)
+        message(FATAL_ERROR "sqlite3 upsert of FLASH$attn_fwd failed (rc=${_sqlite_rc}): ${_sqlite_err}")
+    endif()
+    # Force WAL checkpoint to ensure all upserted data is visible to the next reader
+    execute_process(
+        COMMAND sqlite3 "${TGT_DB}" "PRAGMA wal_checkpoint(TRUNCATE);"
+        RESULT_VARIABLE _sqlite_rc
+        ERROR_VARIABLE _sqlite_err
+    )
+    message(STATUS "sqlite3 wal_checkpoint rc=${_sqlite_rc} err=${_sqlite_err}")
+endif()
+# ---------------------------------------------------------------
 
 get_filename_component(AOTRITON_COMPILER "${CMAKE_CURRENT_LIST_DIR}/../v3python/compile.py" ABSOLUTE)
 message("AOTRITON_COMPILER ${AOTRITON_COMPILER}")
@@ -84,7 +140,16 @@ else()
   set(AOTRITON_ENABLE_FP32 0)
 endif()
 
+## Verify central DB has 16384 entries
+execute_process(
+    COMMAND "${VENV_BIN_PYTHON}" -c
+    "import sqlite3; conn=sqlite3.connect('${AOTRITON_V2_BUILD_DIR}/database/tuning_database.sqlite3'); rows=conn.execute('SELECT DISTINCT \"inputs\$Max_seqlen_q\" FROM \"FLASH\$attn_fwd\" WHERE gpu=\"gfx1100_mod0\" ORDER BY \"inputs\$Max_seqlen_q\"').fetchall(); print('DB seqlen_q values:', [r[0] for r in rows])"
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_PARENT_DIR}"
+)
+
 ## Generate Bare.* files and shim files
+message("EFFECTIVE_TARGET_GPUS >> ${EFFECTIVE_TARGET_GPUS} <<")
+# exit()
 execute_process(
 COMMAND ${CMAKE_COMMAND}
 -E env VIRTUAL_ENV=${VENV_DIR}
@@ -97,6 +162,8 @@ COMMAND_ECHO STDOUT
 WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_PARENT_DIR}"
 COMMAND_ERROR_IS_FATAL ANY
 )
+
+# exit()
 
 # Compile HSACO Kernels
 if(NOT AOTRITON_NOIMAGE_MODE)

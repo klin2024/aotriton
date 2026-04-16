@@ -125,6 +125,23 @@ TritonKernel::invoke(std::string_view kernel_name,
   if (peek_kernel_image)
     return hipSuccess;
 #endif
+//   return hipModuleLaunchKernel(func,
+//                                grid.x,
+//                                grid.y,
+//                                grid.z,
+//                                essentials_.block.x,
+//                                essentials_.block.y,
+//                                essentials_.block.z,
+//                                essentials_.shared_memory_size,
+//                                stream,
+//                                args.data(),
+//                                0);
+
+
+  static int cc  = 0;
+  cc ++;
+//   if (cc % 10 != 0) {
+  if (true) {
   return hipModuleLaunchKernel(func,
                                grid.x,
                                grid.y,
@@ -136,6 +153,40 @@ TritonKernel::invoke(std::string_view kernel_name,
                                stream,
                                args.data(),
                                0);
+  }
+  hipEvent_t start, stop;
+  hipEventCreate(&start);
+  hipEventCreate(&stop);
+  hipDeviceSynchronize();
+  hipEventRecord(start, stream);
+  hipError_t err;
+
+  err = hipModuleLaunchKernel(func,
+                              grid.x,
+                              grid.y,
+                              grid.z,
+                              essentials_.block.x,
+                              essentials_.block.y,
+                              essentials_.block.z,
+                              essentials_.shared_memory_size,
+                              stream,
+                              args.data(),
+                              0);
+  
+  hipEventRecord(stop, stream);
+  hipEventSynchronize(stop);
+   
+  float gpu_ms = 0;
+  hipEventElapsedTime(&gpu_ms, start, stop);
+  
+  std::cerr << "  GPU kernel time: " << gpu_ms << " ms" << std::endl;
+
+  hipEventDestroy(start);
+  hipEventDestroy(stop);
+
+  return err;
+
+
 }
 
 hipError_t
@@ -229,6 +280,18 @@ TritonKernel::load_for_device(int device_id,
                               std::string_view kernel_function_name,
                               std::string_view stem_name,
                               pstring_view package_path) {
+
+
+  std::cerr << "=== Kernel Loading Info ===" << std::endl;
+#if defined(_WIN32)
+  std::wcerr << L"> Package Path: " << package_path << std::endl;
+#else
+  std::cerr << "Package Path: " << package_path << std::endl;
+#endif
+  std::cerr << "> Stem Name (File ID): " << stem_name << std::endl;
+  std::cerr << "> Kernel Function Name: " << kernel_function_name << std::endl;
+
+
   hipJitOption opt[] = { hipJitOptionErrorLogBufferSizeBytes,
                          hipJitOptionErrorLogBuffer,
                          hipJitOptionInfoLogBufferSizeBytes,

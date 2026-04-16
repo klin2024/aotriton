@@ -75,6 +75,12 @@ class Factory(object):
             log(lambda : f'select stmt: {stmt} params {params}')
             df = pd.read_sql_query(stmt, self._conn, params=params)
             if not df.empty:
+                import os
+                if os.getenv('MILES_DEBUG') and 'inputs$Max_seqlen_q' in df.columns:
+                    seqlen_vals = sorted(df["inputs$Max_seqlen_q"].unique().tolist())
+                    if len(seqlen_vals) != 11:
+                        print(f'[MILES_DEBUG] INCOMPLETE df shape: {df.shape}, seqlen_q: {seqlen_vals}')
+                        print(f'[MILES_DEBUG] SQL: {format_sql(stmt, params)}')
                 return df, format_sql(stmt, params)
             # Downgrade
             stmt, params = build_sql(functional.fallback_choices)

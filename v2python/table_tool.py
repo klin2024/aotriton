@@ -16,7 +16,8 @@ from pathlib import Path
 
 # FIXME: load from kdesc
 HEAD_DIMS = np.array([16, 32, 48, 64, 80, 96, 128, 160, 192, 224, 256, 512], dtype=np.int32)
-SEQLENS = np.array([16,32,64,128,256,512,1024,2048,4096,8192], dtype=np.int32)
+SEQLENS = np.array([16,32,64,128,256,512,1024,2048,4096,8192, 16384], dtype=np.int32)
+# 8192*2/8192/4,
 ROUND_INPUTS = bool(int(os.getenv('ROUND_INPUTS', True)))
 
 def round_to_power_of_two(x):
@@ -383,7 +384,8 @@ class TuningDatabase(object):
     def _create_table(self, tune_info):
         columns = self.collect_columns(tune_info['inputs'], prefix='inputs$')
         # UNIQUE = 'UNIQUE'
-        col_def = ['id INTEGER PRIMARY KEY', f'gpu TEXT']
+        # col_def = ['id INTEGER PRIMARY KEY', f'gpu TEXT']
+        col_def = [f'gpu TEXT']
         col_def += [f'{colname} {self.sqltype(pytype)}' for colname, _, pytype in columns]
         unique = ', '.join(['gpu'] + [colname for colname, _, _ in columns])
         columns = self.collect_columns(tune_info['tuned_kernel'], prefix='tuned_kernel$')
